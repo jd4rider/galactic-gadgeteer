@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Galactic Gadgeteer: The Lost Worlds Adventure — an original sci-fi platforming adventure from Little Joy Arcade."
+    />
+    <meta name="theme-color" content="#071326" />
+    <meta property="og:title" content="Galactic Gadgeteer" />
+    <meta property="og:description" content="Explore strange worlds. Discover incredible gadgets. Save the galaxy." />
+    <meta property="og:type" content="website" />
+    <title>Galactic Gadgeteer — Little Joy Arcade</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #071326;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+      #game {
+        width: 100%;
+        height: 100%;
+      }
+      #game canvas {
+        display: block;
+        touch-action: none;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      #rotate-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        padding: 32px;
+        box-sizing: border-box;
+        color: #fff6dc;
+        text-align: center;
+        background:
+          radial-gradient(circle at 50% 18%, rgba(48, 213, 200, 0.22), transparent 42%),
+          radial-gradient(circle at 18% 92%, rgba(255, 159, 28, 0.18), transparent 38%),
+          linear-gradient(160deg, #071326 0%, #132b52 55%, #261b4d 100%);
+        font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      }
+      body.gg-portrait #rotate-overlay {
+        display: flex;
+      }
+      body.gg-portrait #game {
+        visibility: hidden;
+      }
+      .rotate-logo {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: clamp(20px, 5vw, 30px);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .rotate-logo-mark {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border: 2px solid rgba(255, 214, 140, 0.7);
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(46, 196, 182, 0.35), rgba(255, 159, 28, 0.25));
+        box-shadow: 0 0 32px rgba(46, 196, 182, 0.28);
+        font-size: 28px;
+      }
+      .rotate-phone {
+        width: 104px;
+        height: 172px;
+        border: 4px solid #fff3cf;
+        border-radius: 24px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38), 0 0 44px rgba(46, 196, 182, 0.25);
+        animation: rotate-phone 2.4s ease-in-out infinite;
+        position: relative;
+      }
+      .rotate-phone::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 9px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #fff3cf;
+        transform: translateX(-50%);
+        opacity: 0.7;
+      }
+      @keyframes rotate-phone {
+        0%, 18% { transform: rotate(0deg); }
+        52%, 82% { transform: rotate(90deg); }
+        100% { transform: rotate(90deg); }
+      }
+      .rotate-title {
+        margin: 0;
+        font-size: clamp(26px, 7vw, 42px);
+        line-height: 1.05;
+        color: #fff6dc;
+      }
+      .rotate-copy {
+        margin: 0;
+        max-width: 330px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: rgba(255, 246, 220, 0.7);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rotate-phone { animation-duration: 8s; }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="game" aria-label="Galactic Gadgeteer game canvas" role="application"></main>
+    <p id="game-status" class="sr-only" aria-live="polite"></p>
+    <div id="rotate-overlay" role="dialog" aria-modal="true" aria-label="Rotate your device">
+      <div class="rotate-logo">
+        <span class="rotate-logo-mark" aria-hidden="true">✦</span>
+        <span>Galactic Gadgeteer</span>
+      </div>
+      <div class="rotate-phone" aria-hidden="true"></div>
+      <h1 class="rotate-title">Rotate Your Device<br />to Play</h1>
+      <p class="rotate-copy">
+        The Lost Worlds are drawn for landscape. Turn your phone sideways and the expedition
+        resumes exactly where you left it.
+      </p>
+    </div>
+    <noscript>Galactic Gadgeteer needs JavaScript enabled.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+    <script src="./arcade-client.js" data-game-id="galactic-gadgeteer"></script>
+  </body>
+</html>

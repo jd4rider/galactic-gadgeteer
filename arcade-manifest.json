@@ -1,0 +1,35 @@
+{
+  "id": "galactic-gadgeteer",
+  "name": "Galactic Gadgeteer: The Lost Worlds",
+  "tagline": "Explore strange worlds. Discover incredible gadgets. Save the galaxy.",
+  "description": "An original hand-illustrated 2D sci-fi platformer starring Pip, a young gadgeteer, and BOLT, a hovering robot with opinions. The first playable expedition, The Fallen Beacon, is a complete Starlight Meadows level built around responsive movement: a meadow gate, a jetpack chasm, a magnetic crate puzzle, spring-boot gardens and a phase-thin wall all lead to a lost Starlight Engine fragment. Keyboard, mouse, standard-mapped controller and multitouch controls feed the same input layer; the game pauses cleanly when a controller disconnects or the browser loses focus, and landscape is enforced on phones. Original art, animation and music are generated in-engine, with no external asset pack.",
+  "categories": ["Arcade", "Platformer", "Adventure"],
+  "runtime": "Phaser 3",
+  "version": "0.1.0",
+  "updated": "2026-11-10",
+  "status": "live",
+  "featured": true,
+  "playUrl": "https://jd4rider.github.io/galactic-gadgeteer/play/",
+  "siteUrl": "https://jd4rider.github.io/galactic-gadgeteer/",
+  "repoUrl": "https://github.com/jd4rider/galactic-gadgeteer",
+  "releasesUrl": "https://github.com/jd4rider/galactic-gadgeteer/releases",
+  "downloads": [],
+  "cover": { "from": "#2ec4b6", "to": "#132b52", "emoji": "🚀" },
+  "highlights": [
+    "A complete playable Starlight Meadows expedition, from the meadow gate to the Starlight fragment",
+    "All five gadgets: plasma blaster, jetpack, spring boots, magnet glove and phase dash",
+    "Keyboard and mouse, standard-mapped controllers, and true multitouch virtual controls",
+    "Landscape-only mobile presentation with a polished rotate overlay",
+    "Original procedural character art, parallax scenery, particles and synthesized music",
+    "Star Shards, hidden data capsules and a breakable secret wall"
+  ],
+  "howToPlay": [
+    "Move with A/D or the arrow keys, jump with Space, fire with J or the left mouse button.",
+    "Choose a gadget with 1–5 and use it with K. On touch, use the left thumb pad and the action buttons.",
+    "Collect the jetpack, magnet glove, spring boots and phase dash to solve the meadow's traversal puzzles.",
+    "Reach the Starlight Engine fragment at the end of the meadow. Break the cracked wall for a hidden data capsule.",
+    "On a phone, rotate to landscape. The game pauses safely if the device turns portrait."
+  ],
+  "levels": "1 complete expedition · Starlight Meadows, World 1",
+  "saveKey": "galactic-gadgeteer-save-v1"
+}
