@@ -5,7 +5,7 @@
   "description": "An original hand-illustrated 2D sci-fi platformer starring Pip, a young gadgeteer, and BOLT, a hovering robot with opinions. The first playable expedition, The Fallen Beacon, is a complete Starlight Meadows level built around responsive movement: a meadow gate, a jetpack chasm, a magnetic crate puzzle, spring-boot gardens and a phase-thin wall all lead to a lost Starlight Engine fragment. Keyboard, mouse, standard-mapped controller and multitouch controls feed the same input layer; the game pauses cleanly when a controller disconnects or the browser loses focus, and landscape is enforced on phones. Original art, animation and music are generated in-engine, with no external asset pack.",
   "categories": ["Arcade", "Platformer", "Adventure"],
   "runtime": "Phaser 3",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "updated": "2026-11-10",
   "status": "live",
   "featured": true,
@@ -27,6 +27,7 @@
     "Classic Keen controls: move with the arrow keys, jump with Ctrl, fire with Space, and use your gadget with Alt.",
     "Choose a gadget with 1–5; Alt or K uses it. On touch, use the left thumb pad and the action buttons.",
     "Collect the jetpack, magnet glove, spring boots and phase dash to solve the meadow's traversal puzzles.",
+    "Touching any enemy pops it, whether you run into it, brush it in mid-air or land on it.",
     "Reach the Starlight Engine fragment at the end of the meadow. Break the cracked wall for a hidden data capsule.",
     "On a phone, rotate to landscape. The game pauses safely if the device turns portrait."
   ],

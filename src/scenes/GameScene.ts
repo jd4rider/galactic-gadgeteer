@@ -1038,15 +1038,13 @@ export class GameScene extends Phaser.Scene {
   private checkEnemyContact(enemy: Enemy): void {
     const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.sprite.x, enemy.sprite.y)
     if (distance > (enemy.kind === 'drone' ? 36 : 38)) return
+    // Contact is enough: every enemy pops when Pip touches it, whether he is
+    // stomping, running into it, or brushing it in the air. No stomp timing.
     const playerBody = this.player.body()
-    if (playerBody.velocity.y > 130 && this.player.y < enemy.sprite.y - 8) {
-      enemy.hit(2)
-      playerBody.setVelocityY(-420)
-      this.sparks.emitParticleAt(enemy.sprite.x, enemy.sprite.y, 8)
-      audio.sfx('hit')
-    } else {
-      this.player.damage(1, enemy.sprite.x)
-    }
+    enemy.hit(enemy.hp)
+    playerBody.setVelocityY(-420)
+    this.sparks.emitParticleAt(enemy.sprite.x, enemy.sprite.y, 10)
+    audio.sfx('hit')
   }
 
   private shotFrom(

@@ -45,6 +45,7 @@ Touch controls support real simultaneous presses: move, hold jump, fire and use 
 - Pip's procedural animation rig: idle breathing, blinking, look-around pupils, walk/run, rising/falling, landing squash, jetpack flight, wall lean, dash lean, shooting recoil, hurt blink, celebrating and respawn.
 - BOLT follows with spring smoothing, digital eyes, antenna motion and thruster pulse.
 - Five gadgets: plasma blaster, jetpack with fuel, charged spring boots, magnetic crate pulling and phase dash through a dedicated barrier collision rule.
+- Any enemy pops on contact with Pip, without requiring a stomp or a perfectly timed jump.
 - Starlight Meadows: six distinct traversal beats, three enemy behaviours, destructible wall, data capsules, 36 Star Shards, two checkpoints, moving platform, spike hazards and a results sequence.
 - Animated menu, settings, keyboard remapping, controls guide, expedition log and achievements.
 - Original art generated into canvas textures at boot: layered parallax sky, ringed planet, clouds, mountains, floating islands, alien canopy, foreground vines, illustrated platforms, characters and effects.
