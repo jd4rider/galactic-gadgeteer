@@ -11,6 +11,15 @@ import {
   writeSave,
   type SaveData,
 } from '../core/save'
+import {
+  LEVELS_PER_WORLD,
+  TOTAL_CAPSULES,
+  TOTAL_LEVELS,
+  WORLDS,
+  firstIncompleteInWorld,
+  firstIncompleteLevel,
+  levelsInWorld,
+} from '../data/levels'
 import { ACTIONS, LABELS, primaryLabel, type Action } from '../input/actions'
 import { InputManager } from '../input/InputManager'
 import { orientation } from '../input/orientation'
@@ -19,7 +28,7 @@ import { platformTexture } from '../art/Textures'
 import { PipView, BoltView } from '../player/PipView'
 import { MenuList, type MenuItem } from '../ui/MenuList'
 
-type Mode = 'main' | 'help' | 'settings' | 'controls' | 'log'
+type Mode = 'main' | 'help' | 'settings' | 'controls' | 'log' | 'worlds'
 
 const REBIND_ACTIONS: Action[] = ['left', 'right', 'jump', 'fire', 'gadget', 'dash', 'pause', 'map']
 
@@ -240,16 +249,31 @@ export class MenuScene extends Phaser.Scene {
     this.list?.destroy()
     this.list = null
     this.titleText.setVisible(mode !== 'main')
+    this.titleText.setY(mode === 'worlds' ? 244 : 300)
     this.subtitleText.setVisible(mode !== 'main')
+    this.subtitleText.setY(mode === 'worlds' ? 266 : 320)
     this.infoText.setVisible(mode === 'help' || mode === 'log')
+    this.infoText.setFontSize(mode === 'log' ? 12 : 14)
+    this.infoText.setLineSpacing(mode === 'log' ? 4 : 7)
     this.backButton.setVisible(mode !== 'main')
     this.subtitleText.setText('')
 
     if (mode === 'main') {
       this.titleText.setVisible(false)
-      this.list = new MenuList(this, this.inputManager, 742, 324, 446, this.mainItems(), {
-        rowHeight: 52,
-        gap: 8,
+      this.list = new MenuList(this, this.inputManager, 742, 300, 446, this.mainItems(), {
+        rowHeight: 48,
+        gap: 6,
+      })
+      return
+    }
+
+    if (mode === 'worlds') {
+      this.titleText.setText('EXPEDITION MAP')
+      this.subtitleText.setText(`${TOTAL_LEVELS} expeditions across ${WORLDS.length} lost worlds. Choose a world.`)
+      this.infoText.setVisible(false)
+      this.list = new MenuList(this, this.inputManager, 742, 292, 446, this.worldItems(), {
+        rowHeight: 31,
+        gap: 2,
       })
       return
     }
@@ -299,28 +323,34 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.titleText.setText('EXPEDITION LOG')
-    this.subtitleText.setText('Everything the meadow remembers.')
+    this.subtitleText.setText('Everything the lost worlds remember.')
     this.infoText.setText(this.logCopy())
-    this.list = new MenuList(this, this.inputManager, 742, 548, 446, [
+    this.list = new MenuList(this, this.inputManager, 742, 626, 446, [
       {
         label: 'BACK TO MENU',
         onSelect: () => this.setMode('main'),
       },
-    ], { rowHeight: 42 })
+    ], { rowHeight: 36 })
   }
 
   private mainItems(): MenuItem[] {
     const hasProgress = completedLevels(this.save) > 0
+    const next = firstIncompleteLevel(this.save)
     return [
       {
         label: hasProgress ? 'CONTINUE EXPEDITION' : 'START EXPEDITION',
-        detail: 'World 1 · Starlight Meadows · The Fallen Beacon',
+        detail: `${next.id.toUpperCase()} · ${next.world} · ${next.name}`,
         accent: CSS.gold,
-        onSelect: () => this.startGame(),
+        onSelect: () => this.startGame(next.id),
+      },
+      {
+        label: 'EXPEDITION MAP',
+        detail: `${completedLevels(this.save)}/${TOTAL_LEVELS} complete · ${WORLDS.length} worlds · ${totalStars(this.save)}/${TOTAL_LEVELS * 3} stars`,
+        onSelect: () => this.setMode('worlds'),
       },
       {
         label: 'HOW TO PLAY',
-        detail: 'Movement, gadgets and the secrets of Starlight Meadows',
+        detail: 'Movement, gadgets and the secrets of the lost worlds',
         onSelect: () => this.setMode('help'),
       },
       {
@@ -335,10 +365,24 @@ export class MenuScene extends Phaser.Scene {
       },
       {
         label: 'EXPEDITION LOG',
-        detail: `${totalStars(this.save)} ★   ·   ${this.save.shards} shards   ·   ${this.save.achievements.length}/${ACHIEVEMENTS.length} achievements`,
+        detail: `${completedLevels(this.save)}/${TOTAL_LEVELS} complete   ·   ${this.save.achievements.length}/${ACHIEVEMENTS.length} achievements`,
         onSelect: () => this.setMode('log'),
       },
     ]
+  }
+
+  private worldItems(): MenuItem[] {
+    return WORLDS.map((world) => {
+      const levels = levelsInWorld(world.number)
+      const completed = levels.filter((level) => this.save.levels[level.id]?.completed).length
+      const stars = levels.reduce((sum, level) => sum + (this.save.levels[level.id]?.stars ?? 0), 0)
+      return {
+        label: `WORLD ${world.number} · ${world.name.toUpperCase()}`,
+        value: () => `${completed}/${LEVELS_PER_WORLD} · ${stars}★`,
+        accent: completed === levels.length ? CSS.gold : CSS.tealLight,
+        onSelect: () => this.startGame(firstIncompleteInWorld(world.number, this.save).id),
+      }
+    })
   }
 
   private settingsItems(): MenuItem[] {
@@ -475,31 +519,31 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private logCopy(): string {
-    const level = this.save.levels['w1-1']
-    const stars = level?.stars ?? 0
-    const completed = level?.completed
-    const achievements = ACHIEVEMENTS.map((achievement) =>
-      this.save.achievements.includes(achievement.id) ? `★ ${achievement.name}` : `◇ ${achievement.name}`,
-    ).join('\n')
+    const completed = completedLevels(this.save)
+    const stars = totalStars(this.save)
+    const worlds = WORLDS.map((world) => {
+      const levels = levelsInWorld(world.number)
+      const done = levels.filter((level) => this.save.levels[level.id]?.completed).length
+      const worldStars = levels.reduce((sum, level) => sum + (this.save.levels[level.id]?.stars ?? 0), 0)
+      return `WORLD ${world.number} · ${world.name.toUpperCase()}  ·  ${done}/${LEVELS_PER_WORLD}  ·  ${worldStars}/${LEVELS_PER_WORLD * 3}★`
+    })
     return [
-      `STARLIGHT MEADOWS  ·  THE FALLEN BEACON`,
-      completed
-        ? `Completed  ·  ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  ·  best ${Math.floor((level?.bestMs ?? 0) / 60000)}:${String(Math.floor(((level?.bestMs ?? 0) % 60000) / 1000)).padStart(2, '0')}`
-        : 'Not yet completed',
-      `Star Shards  ·  ${this.save.shards}  ·  Data capsules  ·  ${this.save.capsules.length}/2`,
-      '',
-      achievements,
+      'STARLIGHT EXPEDITION',
+      `${completed}/${TOTAL_LEVELS} expeditions complete  ·  ${stars}/${TOTAL_LEVELS * 3} stars`,
+      `Data capsules  ·  ${this.save.capsules.length}/${TOTAL_CAPSULES}  ·  Achievements  ·  ${this.save.achievements.length}/${ACHIEVEMENTS.length}`,
+      ...worlds,
     ].join('\n')
   }
 
-  private startGame(): void {
+  private startGame(levelId?: string): void {
     if (this.transitioned) return
     this.transitioned = true
+    const target = levelId ?? firstIncompleteLevel(this.save).id
     audio.unlock()
     audio.sfx('click')
     void orientation.requestLandscape(this.game.canvas)
     this.cameras.main.fadeOut(320, 7, 19, 38)
-    this.time.delayedCall(340, () => this.scene.start('Game'))
+    this.time.delayedCall(340, () => this.scene.start('Game', { levelId: target }))
   }
 
   private showNotice(text: string, duration = 2600): void {

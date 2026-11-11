@@ -24,6 +24,9 @@ const snapshot = () =>
     const d = window.__GG_DEBUG__
     const s = d?.scene
     return {
+      level: d?.level,
+      levelName: d?.levelName,
+      nextLevel: d?.nextLevel,
       paused: Boolean(d?.paused),
       complete: Boolean(d?.complete),
       health: d?.player?.health,
@@ -181,11 +184,23 @@ await page.evaluate(() => {
   scene.player.respawn(6160, 650)
 })
 await page.waitForFunction(() => Boolean(window.__GG_DEBUG__.complete), null, { timeout: 12000 })
-await page.waitForTimeout(900)
+await page.waitForTimeout(1400)
 await page.screenshot({ path: `${out}/results.png` })
 const result = await snapshot()
 console.log('result', result)
 if ((result.elapsedMs ?? 0) <= 0) errors.push('level clock never advanced')
+if (result.nextLevel !== 'w1-2') errors.push(`expected next level w1-2, got ${result.nextLevel}`)
+
+// The first result action must carry the expedition into level 2.
+await page.keyboard.press('Enter')
+await page.waitForFunction(() => window.__GG_DEBUG__?.level === 'w1-2', null, { timeout: 15000 })
+await page.waitForTimeout(700)
+const advanced = await snapshot()
+console.log('next expedition', advanced)
+if (advanced.level !== 'w1-2' || advanced.levelName !== 'Dewline Run') {
+  errors.push(`next expedition did not load, got ${advanced.level} / ${advanced.levelName}`)
+}
+if (advanced.health !== 3) errors.push(`next expedition started at ${advanced.health} health`)
 
 // Mobile landscape: tap START, verify the touch layout, then rotate to portrait.
 // Close the desktop tab first so the mobile page owns the browser input focus.

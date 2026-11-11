@@ -35,8 +35,17 @@ export interface HintDef {
   text: string
 }
 
+export interface CheckpointDef {
+  id: string
+  name: string
+  x: number
+  y: number
+}
+
 export interface LevelData {
   id: string
+  worldNumber: number
+  levelNumber: number
   world: string
   name: string
   subtitle: string
@@ -48,7 +57,7 @@ export interface LevelData {
   capsules: Array<{ id: string; x: number; y: number; title: string; text: string }>
   enemies: EnemyDef[]
   pickups: PickupDef[]
-  checkpoints: Array<{ id: string; x: number; y: number }>
+  checkpoints: CheckpointDef[]
   spikes: Array<{ x: number; y: number; w: number }>
   hints: HintDef[]
   crate: { x: number; y: number }
@@ -100,6 +109,8 @@ const shardRows: ShardDef[] = [
 
 export const LEVEL_ONE: LevelData = {
   id: 'w1-1',
+  worldNumber: 1,
+  levelNumber: 1,
   world: 'STARLIGHT MEADOWS',
   name: 'The Fallen Beacon',
   subtitle: 'A Starlight Engine fragment is singing in the old meadow.',
@@ -170,8 +181,8 @@ export const LEVEL_ONE: LevelData = {
     { gadget: 'phase', x: 5060, y: 450 },
   ],
   checkpoints: [
-    { id: 'meadow-gate', x: 3390, y: 760 },
-    { id: 'high-garden', x: 4870, y: 520 },
+    { id: 'meadow-gate', name: 'Meadow Gate', x: 3390, y: 760 },
+    { id: 'high-garden', name: 'High Garden', x: 4870, y: 520 },
   ],
   spikes: [
     { x: 2020, y: 742, w: 82 },

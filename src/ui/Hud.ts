@@ -45,6 +45,7 @@ export class Hud {
     totalShards: number,
     onPause: () => void,
     onGadgetSelect: (index: number) => void = () => {},
+    status = 'The Fallen Beacon',
   ) {
     this.scene = scene
     this.totalShards = totalShards
@@ -77,7 +78,7 @@ export class Hud {
       .setOrigin(0.5, 0)
       .setResolution(2)
     this.statusText = scene.add
-      .text(GAME_WIDTH / 2, 44, 'The Fallen Beacon', {
+      .text(GAME_WIDTH / 2, 44, status, {
         fontFamily: FONT,
         fontSize: '12px',
         color: CSS.muted,
@@ -218,7 +219,7 @@ export class Hud {
     this.container.add(version)
   }
 
-  update(player: Player, shards: number, elapsedMs: number, checkpoint: string): void {
+  update(player: Player, shards: number, elapsedMs: number, status: string): void {
     if (this.lastHealth !== player.health) {
       this.lastHealth = player.health
       this.drawHealth(player.health, player.maxHealth)
@@ -233,13 +234,7 @@ export class Hud {
     this.shardText.setText(`${shards} / ${this.totalShards}`)
     const seconds = Math.floor(elapsedMs / 1000)
     this.timerText.setText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`)
-    this.statusText.setText(
-      checkpoint === 'meadow-gate'
-        ? 'Checkpoint · Meadow Gate'
-        : checkpoint === 'high-garden'
-          ? 'Checkpoint · High Garden'
-          : 'The Fallen Beacon',
-    )
+    this.statusText.setText(status)
     if (player.unlocked.has('jetpack')) {
       this.drawFuel(player.fuelRatio)
     } else {

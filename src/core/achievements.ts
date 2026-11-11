@@ -9,25 +9,25 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-steps',
     name: 'First Steps on Starlight',
-    description: 'Set foot in Starlight Meadows and answer the beacon.',
+    description: 'Set foot in a lost world and answer the beacon.',
     glyph: '✦',
   },
   {
     id: 'fully-equipped',
     name: 'Fully Equipped',
-    description: 'Recover every gadget hidden in the meadow.',
+    description: 'Recover all five gadgets in a single expedition.',
     glyph: '◆',
   },
   {
     id: 'shardkeeper',
     name: 'Shardkeeper',
-    description: 'Collect every Star Shard in The Fallen Beacon.',
+    description: 'Collect every Star Shard in one expedition.',
     glyph: '✧',
   },
   {
     id: 'archivist',
     name: 'Meadow Archivist',
-    description: 'Find both hidden data capsules.',
+    description: 'Find both hidden data capsules in one expedition.',
     glyph: '▤',
   },
   {
@@ -39,7 +39,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'beacon-lit',
     name: 'Beacon Lit',
-    description: 'Recover the Starlight Engine fragment.',
+    description: 'Recover a Starlight Engine fragment.',
     glyph: '★',
   },
 ]

@@ -2,10 +2,10 @@
   "id": "galactic-gadgeteer",
   "name": "Galactic Gadgeteer: The Lost Worlds",
   "tagline": "Explore strange worlds. Discover incredible gadgets. Save the galaxy.",
-  "description": "An original hand-illustrated 2D sci-fi platformer starring Pip, a young gadgeteer, and BOLT, a hovering robot with opinions. The first playable expedition, The Fallen Beacon, is a complete Starlight Meadows level built around responsive movement: a meadow gate, a jetpack chasm, a magnetic crate puzzle, spring-boot gardens and a phase-thin wall all lead to a lost Starlight Engine fragment. Keyboard, mouse, standard-mapped controller and multitouch controls feed the same input layer; the game pauses cleanly when a controller disconnects or the browser loses focus, and landscape is enforced on phones. Original art, animation and music are generated in-engine, with no external asset pack.",
+  "description": "An original 2D sci-fi platformer starring Pip, a young gadgeteer, and BOLT, a hovering robot with opinions. A 150-expedition campaign spans ten lost worlds, from the handcrafted Starlight Meadows opener to the Starlight Engine itself. Every expedition combines responsive movement with a magnetic crate gate, jetpack traversal, spring boots and a phase-thin barrier, plus 36 Star Shards, two data capsules and checkpoint relays. Keyboard, mouse, standard-mapped controller and multitouch controls feed the same input layer; the game pauses cleanly when a controller disconnects or the browser loses focus, and landscape is enforced on phones. Original art, animation and music are generated in-engine, with no external asset pack.",
   "categories": ["Arcade", "Platformer", "Adventure"],
   "runtime": "Phaser 3",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "updated": "2026-11-10",
   "status": "live",
   "featured": true,
@@ -16,21 +16,22 @@
   "downloads": [],
   "cover": { "from": "#2ec4b6", "to": "#132b52", "emoji": "🚀" },
   "highlights": [
-    "A complete playable Starlight Meadows expedition, from the meadow gate to the Starlight fragment",
+    "150 expeditions across ten lost worlds, from Starlight Meadows to the Starlight Engine",
+    "A handcrafted opening expedition plus 149 deterministic generated layouts with safe, tested routes",
     "All five gadgets: plasma blaster, jetpack, spring boots, magnet glove and phase dash",
+    "Expedition map, automatic Continue progression and a Next Expedition results flow",
     "Keyboard and mouse, standard-mapped controllers, and true multitouch virtual controls",
-    "Landscape-only mobile presentation with a polished rotate overlay",
-    "Original procedural character art, parallax scenery, particles and synthesized music",
-    "Star Shards, hidden data capsules and a breakable secret wall"
+    "36 Star Shards, two hidden data capsules and a breakable secret wall in every expedition"
   ],
   "howToPlay": [
     "Standard controls: move with the arrow keys or A/D, jump with Space, fire with J, and use your gadget with K.",
     "Choose a gadget with 1–5; K uses it. On touch, use the left thumb pad and the action buttons.",
-    "Collect the jetpack, magnet glove, spring boots and phase dash to solve the meadow's traversal puzzles.",
+    "Collect the jetpack, magnet glove, spring boots and phase dash to solve each world's traversal puzzles.",
     "Touching any enemy pops it, whether you run into it, brush it in mid-air or land on it.",
-    "Reach the Starlight Engine fragment at the end of the meadow. Break the cracked wall for a hidden data capsule.",
+    "Reach the Starlight Engine fragment at the end of each expedition. Break the cracked wall for a hidden data capsule.",
+    "Finish an expedition to unlock the next one. The Expedition Map jumps between the ten lost worlds.",
     "On a phone, rotate to landscape. The game pauses safely if the device turns portrait."
   ],
-  "levels": "1 complete expedition · Starlight Meadows, World 1",
+  "levels": "150 expeditions · 10 worlds",
   "saveKey": "galactic-gadgeteer-save-v1"
 }

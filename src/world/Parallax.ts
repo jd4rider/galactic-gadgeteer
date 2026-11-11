@@ -26,10 +26,14 @@ export class Parallax {
   private autoSpeed: number
   private reduced: boolean
 
-  constructor(scene: Phaser.Scene, options: { autoSpeed?: number; quality?: 'low' | 'medium' | 'high'; reducedMotion?: boolean } = {}) {
+  constructor(
+    scene: Phaser.Scene,
+    options: { autoSpeed?: number; quality?: 'low' | 'medium' | 'high'; reducedMotion?: boolean; tint?: number } = {},
+  ) {
     this.autoSpeed = options.autoSpeed ?? 0
     this.reduced = options.reducedMotion ?? false
     const quality = options.quality ?? 'high'
+    const tint = options.tint
 
     this.sky = scene.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'sky').setScrollFactor(0).setDepth(-120)
     this.stars = scene.add
@@ -80,6 +84,15 @@ export class Parallax {
       .setScrollFactor(0)
       .setDepth(90)
       .setAlpha(0.34)
+
+    if (tint !== undefined) {
+      this.planet.setTint(tint)
+      this.clouds.setTint(tint)
+      this.mountainsFar.setTint(tint)
+      this.mountainsMid.setTint(tint)
+      this.islands.setTint(tint)
+      this.canopy.setTint(tint)
+    }
 
     if (quality !== 'low') {
       const count = quality === 'high' ? 18 : 10

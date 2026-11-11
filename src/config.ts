@@ -5,7 +5,7 @@ export const WORLD_HEIGHT = 1100
 
 export const STORAGE_KEY = 'galactic-gadgeteer-save-v1'
 export const GAME_ID = 'galactic-gadgeteer'
-export const VERSION = '0.1.3'
+export const VERSION = '0.2.0'
 
 export const PALETTE = {
   ink: 0x071326,

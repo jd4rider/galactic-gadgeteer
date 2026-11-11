@@ -3,9 +3,17 @@ import { CSS, DISPLAY_FONT, FONT, GAME_HEIGHT, GAME_WIDTH } from '../config'
 import { audio } from '../audio/AudioEngine'
 import { loadSave, recordLevel, unlockAchievement, formatTime, type SaveData } from '../core/save'
 import { LEVEL_ONE, type LevelData } from '../data/levelOne'
+import {
+  LEVELS_PER_WORLD,
+  WORLDS,
+  firstIncompleteLevel,
+  getLevelData,
+  nextLevel,
+  type LevelRef,
+} from '../data/levels'
 import { Enemy, createEnemies } from '../enemies/Enemies'
 import { InputManager } from '../input/InputManager'
-import { GADGET_NAMES, Player, type Gadget } from '../player/Player'
+import { GADGET_NAMES, GADGET_ORDER, Player, type Gadget } from '../player/Player'
 import { starsFor } from '../player/movement'
 import { platformTexture } from '../art/Textures'
 import { Hud } from '../ui/Hud'
@@ -29,6 +37,7 @@ interface Pickup {
 
 interface Checkpoint {
   id: string
+  name: string
   x: number
   y: number
   image: Phaser.GameObjects.Image
@@ -62,6 +71,7 @@ export class GameScene extends Phaser.Scene {
   private pickups: Pickup[] = []
   private checkpoints: Checkpoint[] = []
   private checkpoint = 'start'
+  private hudStatus = ''
   private checkpointX = LEVEL_ONE.spawn.x
   private checkpointY = LEVEL_ONE.spawn.y
   private enemies: Enemy[] = []
@@ -111,8 +121,10 @@ export class GameScene extends Phaser.Scene {
     super('Game')
   }
 
-  create(): void {
+  create(data: { levelId?: string } = {}): void {
     this.save = loadSave()
+    this.level = getLevelData(data.levelId) ?? getLevelData(firstIncompleteLevel(this.save).id) ?? LEVEL_ONE
+    this.hudStatus = this.level.name
     this.complete = false
     this.paused = false
     this.respawning = false
@@ -135,7 +147,7 @@ export class GameScene extends Phaser.Scene {
 
     this.inputManager = new InputManager(this, this.save.settings.bindings)
     audio.setSettings(this.save.settings)
-    audio.setMood('meadow')
+    audio.setMood(this.level.worldNumber >= 7 ? 'boss' : 'meadow')
     audio.unlock()
 
     this.physics.world.setBounds(0, -240, this.level.width, this.level.height + 480)
@@ -144,6 +156,7 @@ export class GameScene extends Phaser.Scene {
     this.parallax = new Parallax(this, {
       quality: this.save.settings.quality,
       reducedMotion: !this.save.settings.screenShake,
+      tint: WORLDS[this.level.worldNumber - 1]?.tint,
     })
 
     this.buildPlatforms()
@@ -563,7 +576,7 @@ export class GameScene extends Phaser.Scene {
       this.sparks.emitParticleAt(sprite.x, sprite.y, 7)
       audio.sfx('shard')
       if (this.shardsCollected === this.level.shards.length) {
-        this.hud.showToast('EVERY STAR SHARD IN THE MEADOW — BOLT IS IMPRESSED.', 5000)
+        this.hud.showToast('EVERY STAR SHARD IN THIS EXPEDITION — BOLT IS IMPRESSED.', 5000)
         this.grant('shardkeeper')
       }
       this.updateDebugState()
@@ -668,6 +681,7 @@ export class GameScene extends Phaser.Scene {
         this.player.selectGadget(index)
         audio.sfx('click')
       },
+      this.level.name,
     )
     this.touch = new TouchControls(this, this.inputManager, this.save.settings)
     const touchEnabled = this.save.settings.touchControls && this.inputManager.touchDevice
@@ -699,7 +713,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setResolution(2)
     const reason = this.add
-      .text(640, 274, 'Catch your breath. The meadow will wait.', {
+      .text(640, 274, 'Catch your breath. The expedition will wait.', {
         fontFamily: FONT,
         fontSize: '12px',
         color: CSS.muted,
@@ -788,25 +802,33 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showIntro(): void {
-    this.hud.showBanner(this.level.world, `${this.level.name.toUpperCase()}   ·   WORLD 1`)
+    this.hud.showBanner(
+      `WORLD ${this.level.worldNumber}`,
+      `${this.level.name.toUpperCase()}   ·   EXPEDITION ${this.level.levelNumber}/${LEVELS_PER_WORLD}`,
+    )
     this.time.delayedCall(900, () => {
-      this.hud.showToast('BOLT: The fragment is singing past the meadow gate. Follow the light, Pip.', 5200)
+      this.hud.showToast(
+        this.level.id === 'w1-1'
+          ? 'BOLT: The fragment is singing past the meadow gate. Follow the light, Pip.'
+          : `BOLT: ${this.level.subtitle} Keep moving, Pip.`,
+        5200,
+      )
     })
     this.grant('first-steps')
   }
 
   private showGadgetHint(gadget: Gadget): void {
     const hints: Record<Gadget, string> = {
-      blaster: 'PLASMA BLASTER ONLINE — Space or left mouse fires.',
-      jetpack: 'JETPACK ONLINE — tap its slot or press 2, then hold Alt in the air to fly. It burns fuel.',
-      spring: 'SPRING BOOTS ONLINE — tap its slot or press 3, hold Alt on the ground, release to launch.',
-      magnet: 'MAGNET GLOVE ONLINE — tap its slot or press 4, hold Alt near the metal crate to pull it.',
-      phase: 'PHASE DASH ONLINE — tap its slot or press 5, then Shift or Alt to dash through pink barriers.',
+      blaster: 'PLASMA BLASTER ONLINE — press J or left mouse to fire.',
+      jetpack: 'JETPACK ONLINE — tap its slot or press 2, then hold K in the air to fly. It burns fuel.',
+      spring: 'SPRING BOOTS ONLINE — tap its slot or press 3, hold K on the ground, release to launch.',
+      magnet: 'MAGNET GLOVE ONLINE — tap its slot or press 4, hold K near the metal crate to pull it.',
+      phase: 'PHASE DASH ONLINE — tap its slot or press 5, then press Shift to dash through pink barriers.',
     }
     this.hud.showToast(hints[gadget], 5200)
     if (gadget !== 'blaster') {
       this.sparks.emitParticleAt(this.player.x, this.player.y, 20)
-      this.grant('fully-equipped')
+      if (this.player.unlocked.size === GADGET_ORDER.length) this.grant('fully-equipped')
     }
   }
 
@@ -939,6 +961,7 @@ export class GameScene extends Phaser.Scene {
       if (Phaser.Math.Distance.Between(this.player.x, this.player.y, checkpoint.x, checkpoint.y - 40) < 66) {
         checkpoint.active = true
         this.checkpoint = checkpoint.id
+        this.hudStatus = `Checkpoint · ${checkpoint.name}`
         this.checkpointX = checkpoint.x
         this.checkpointY = checkpoint.y - 54
         checkpoint.image.setTint(0xffe59a)
@@ -1021,7 +1044,7 @@ export class GameScene extends Phaser.Scene {
       alpha: 0,
       duration: 420,
     })
-    this.hud.showToast('MAGNETIC PLATE PRESSED — THE MEADOW GATE OPENS.', 4200)
+    this.hud.showToast('MAGNETIC PLATE PRESSED — THE GATE OPENS.', 4200)
     if (this.save.settings.screenShake) this.cameras.main.shake(150, 0.003)
     this.updateDebugState()
   }
@@ -1149,7 +1172,7 @@ export class GameScene extends Phaser.Scene {
           ? 'Rotate your device back to landscape to continue the expedition.'
           : reason === 'controller'
             ? 'Controller disconnected. Reconnect it, or carry on with the keyboard.'
-            : 'Catch your breath. The meadow will wait.',
+            : 'Catch your breath. The expedition will wait.',
     )
     audio.sfx('click')
     this.updateDebugState()
@@ -1197,7 +1220,11 @@ export class GameScene extends Phaser.Scene {
     this.player.freeze()
     this.touch?.setVisible(false)
     this.hud.hideToast()
-    this.hud.showBanner('FRAGMENT RECOVERED', 'STARLIGHT MEADOWS · THE FALLEN BEACON')
+    const next = nextLevel(this.level.id)
+    this.hud.showBanner(
+      next ? 'FRAGMENT RECOVERED' : 'THE ENGINE IS WHOLE',
+      `${this.level.world} · ${this.level.name.toUpperCase()}`,
+    )
     this.cameras.main.flash(400, 255, 227, 154, false)
     if (this.save.settings.screenShake) this.cameras.main.shake(420, 0.004)
     audio.sfx('victory')
@@ -1219,11 +1246,11 @@ export class GameScene extends Phaser.Scene {
     })
     if (!this.damageTaken) this.grant('untouched')
     this.save = loadSave()
-    this.time.delayedCall(1150, () => this.showResults(stars))
+    this.time.delayedCall(1150, () => this.showResults(stars, next))
     this.updateDebugState()
   }
 
-  private showResults(stars: number): void {
+  private showResults(stars: number, next: LevelRef | null): void {
     if (this.resultsContainer) return
     this.resultsContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(1400)
     const shade = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b16, 0.8)
@@ -1236,7 +1263,7 @@ export class GameScene extends Phaser.Scene {
     panel.fillStyle(0xffc857, 0.08)
     panel.fillRoundedRect(330, 126, 620, 92, 18)
     const title = this.add
-      .text(640, 154, 'THE FRAGMENT IS SAFE', {
+      .text(640, 154, next ? 'THE FRAGMENT IS SAFE' : 'THE ENGINE IS WHOLE', {
         fontFamily: DISPLAY_FONT,
         fontSize: '34px',
         fontStyle: 'bold',
@@ -1246,7 +1273,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setResolution(2)
     const sub = this.add
-      .text(640, 191, `STARLIGHT MEADOWS  ·  ${this.level.name.toUpperCase()}`, {
+      .text(640, 191, `${this.level.world}  ·  ${this.level.name.toUpperCase()}  ·  ${this.level.id.toUpperCase()}`, {
         fontFamily: FONT,
         fontSize: '11px',
         fontStyle: 'bold',
@@ -1265,7 +1292,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setResolution(2)
     const stats = this.add
-      .text(640, 303, `TIME  ${formatTime(this.elapsedMs)}      SHARDS  ${this.shardsCollected}/${this.level.shards.length}      CAPSULES  ${this.capsulesFound.size}/2`, {
+      .text(640, 303, `TIME  ${formatTime(this.elapsedMs)}      SHARDS  ${this.shardsCollected}/${this.level.shards.length}      CAPSULES  ${this.capsulesFound.size}/${this.level.capsules.length}`, {
         fontFamily: FONT,
         fontSize: '14px',
         fontStyle: 'bold',
@@ -1278,11 +1305,13 @@ export class GameScene extends Phaser.Scene {
       .text(
         640,
         344,
-        stars === 3
-          ? 'A perfect meadow run. Everything the old world left behind is singing again.'
-          : stars === 2
-            ? 'The beacon is lit. A few more shards and secrets are still waiting in the grass.'
-            : 'The fragment is safe. The meadow still has secrets hidden above and below the path.',
+        next
+          ? stars === 3
+            ? 'A perfect expedition. Everything this lost world left behind is singing again.'
+            : stars === 2
+              ? 'The beacon is lit. A few more shards and secrets are still waiting off the path.'
+              : 'The fragment is safe. This world still has secrets hidden above and below the route.'
+          : 'Every lost world is singing again. BOLT has run out of complaints. For now.',
         {
           fontFamily: FONT,
           fontSize: '13px',
@@ -1295,10 +1324,27 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setResolution(2)
     this.resultsContainer.add([shade, panel, title, sub, starText, stats, body])
-    this.resultsList = new MenuList(this, this.inputManager, 458, 432, 364, [
-      { label: 'PLAY AGAIN', accent: CSS.tealLight, onSelect: () => this.scene.restart() },
+    const items = [
+      ...(next
+        ? [
+            {
+              label: 'NEXT EXPEDITION',
+              detail: `${next.id.toUpperCase()} · ${next.name}`,
+              accent: CSS.tealLight,
+              onSelect: () => this.scene.restart({ levelId: next.id }),
+            },
+          ]
+        : []),
+      {
+        label: 'REPLAY EXPEDITION',
+        onSelect: () => this.scene.restart({ levelId: this.level.id }),
+      },
       { label: 'RETURN TO THE ARCADE MENU', onSelect: () => this.quitToMenu() },
-    ], { rowHeight: 46, gap: 8 })
+    ]
+    this.resultsList = new MenuList(this, this.inputManager, 458, 436, 364, items, {
+      rowHeight: 40,
+      gap: 6,
+    })
     this.resultsList.setDepth(1500)
     this.resultsList.setVisible(true)
     this.resultsContainer.setAlpha(0)
@@ -1361,7 +1407,7 @@ export class GameScene extends Phaser.Scene {
     // scene clocks can be shared across the menu's load time and would show a
     // non-zero expedition clock before the player has taken a step.
     this.elapsedMs += Math.min(delta, 100)
-    this.hud.update(this.player, this.shardsCollected, this.elapsedMs, this.checkpoint)
+    this.hud.update(this.player, this.shardsCollected, this.elapsedMs, this.hudStatus)
 
     if (this.player.y > this.level.height - 20) {
       this.player.damage(3, this.player.x)
@@ -1397,6 +1443,10 @@ export class GameScene extends Phaser.Scene {
   private updateDebugState(): void {
     ;(window as unknown as { __GG_DEBUG__?: unknown }).__GG_DEBUG__ = {
       level: this.level.id,
+      levelName: this.level.name,
+      worldNumber: this.level.worldNumber,
+      levelNumber: this.level.levelNumber,
+      nextLevel: nextLevel(this.level.id)?.id ?? null,
       scene: this,
       player: this.player
         ? {
