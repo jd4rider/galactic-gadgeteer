@@ -65,9 +65,14 @@ const touchMoveGuard = (event: TouchEvent): void => {
 }
 document.addEventListener('touchmove', touchMoveGuard, { passive: false })
 
-window.addEventListener('resize', () => {
+const refreshScale = (): void => {
   game.scale.refresh()
-})
+}
+window.addEventListener('resize', refreshScale)
+window.addEventListener('load', refreshScale)
+// The coarse-pointer CSS stretches the canvas to the viewport after Phaser's
+// initial FIT measurement; refresh so pointer coordinates follow the real rect.
+window.setTimeout(refreshScale, 120)
 
 // Keep the build version visible in devtools and useful for smoke tests.
 document.documentElement.dataset.game = 'galactic-gadgeteer'

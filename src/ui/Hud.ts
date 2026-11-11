@@ -34,15 +34,22 @@ export class Hud {
   private controls: Phaser.GameObjects.Text
   private pauseButton: Phaser.GameObjects.Container
   private onPause: () => void
+  private onGadgetSelect: (index: number) => void
   private lastHealth = -1
   private lastGadget = ''
   private lastUnlocked = ''
   private totalShards: number
 
-  constructor(scene: Phaser.Scene, totalShards: number, onPause: () => void) {
+  constructor(
+    scene: Phaser.Scene,
+    totalShards: number,
+    onPause: () => void,
+    onGadgetSelect: (index: number) => void = () => {},
+  ) {
     this.scene = scene
     this.totalShards = totalShards
     this.onPause = onPause
+    this.onGadgetSelect = onGadgetSelect
     this.container = scene.add.container(0, 0).setScrollFactor(0).setDepth(1000)
 
     this.healthGraphics = scene.add.graphics()
@@ -114,9 +121,13 @@ export class Hud {
           color: CSS.muted,
         })
         .setResolution(2)
+      const hit = scene.add
+        .circle(42 + index * 52, 158, 28, 0xffffff, 0.001)
+        .setInteractive({ useHandCursor: true })
+      hit.on('pointerdown', () => this.onGadgetSelect(index))
       this.gadgetIcons.push(icon)
       this.gadgetKeys.push(key)
-      this.container.add([icon, key])
+      this.container.add([icon, key, hit])
     })
     this.gadgetName = scene.add
       .text(29, 241, 'PLASMA BLASTER', {
@@ -237,8 +248,8 @@ export class Hud {
     }
     this.controls.setText(
       player.unlocked.has('phase')
-        ? 'A/D MOVE  ·  SPACE JUMP  ·  J FIRE  ·  K GADGET  ·  SHIFT DASH  ·  ESC PAUSE'
-        : 'A/D MOVE  ·  SPACE JUMP  ·  J FIRE  ·  K GADGET  ·  ESC PAUSE',
+        ? 'ARROWS / A-D MOVE  ·  CTRL JUMP  ·  SPACE FIRE  ·  ALT GADGET  ·  SHIFT DASH  ·  ESC PAUSE'
+        : 'ARROWS / A-D MOVE  ·  CTRL JUMP  ·  SPACE FIRE  ·  ALT GADGET  ·  ESC PAUSE',
     )
   }
 

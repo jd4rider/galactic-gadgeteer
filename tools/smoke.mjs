@@ -64,46 +64,97 @@ console.log('started', started)
 if (started.health !== 3) errors.push(`expected full health at spawn, got ${started.health}`)
 if ((started.elapsedMs ?? 0) > 5000) errors.push(`level clock started late at ${started.elapsedMs}ms`)
 
-// Test the jump from the clean spawn, before horizontal movement can leave a ledge.
-const beforeJump = started.jumps ?? 0
+const projectileState = () =>
+  page.evaluate(() => {
+    const scene = window.__GG_DEBUG__.scene
+    return {
+      shots: scene.projectiles.getChildren().filter((shot) => shot.active).map((shot) => ({
+        x: Math.round(shot.x),
+        y: Math.round(shot.y),
+        vx: Math.round(shot.body?.velocity?.x ?? 0),
+        vy: Math.round(shot.body?.velocity?.y ?? 0),
+      })),
+      flashes: scene.children.list.filter((child) => child.texture?.key === 'muzzle' && child.active).length,
+    }
+  })
+
+// Fire before moving. Physics is paused for this observation so the slow
+// headless clock cannot advance a bolt all the way to the distant wall in one
+// frame; the velocity assertion still exercises the real spawn path.
+const beforeShots = started.shots ?? 0
+await page.evaluate(() => {
+  const scene = window.__GG_DEBUG__.scene
+  scene.physics.pause()
+  scene.player.nextShotAt = 0
+  scene.player.facing = 1
+})
 await page.keyboard.down('Space')
 await page.waitForTimeout(90)
 await page.keyboard.up('Space')
-await page.waitForTimeout(260)
-const jumped = await snapshot()
-console.log('jump', { before: beforeJump, after: jumped.jumps, y: jumped.y, health: jumped.health })
-if ((jumped.jumps ?? 0) <= beforeJump) errors.push('jump action did not fire')
+await page.waitForTimeout(100)
+const rightShot = await projectileState()
+console.log('fire right', { before: beforeShots, shots: rightShot.shots })
+if (rightShot.shots.length === 0 || rightShot.shots[0].vx <= 0) {
+  errors.push('right-facing shot did not travel right')
+}
 
+// Turn Pip directly so this checks projectile direction without depending on
+// a synthetic movement key landing inside a paused physics step.
 await page.evaluate(() => {
   const scene = window.__GG_DEBUG__.scene
-  scene.player.body().reset(150, 690)
-  scene.player.body().setVelocity(0, 0)
+  scene.player.nextShotAt = 0
+  scene.player.facing = -1
 })
-await page.waitForTimeout(350)
+await page.keyboard.down('Space')
+await page.waitForTimeout(120)
+await page.keyboard.up('Space')
+await page.waitForTimeout(100)
+const leftShot = await projectileState()
+console.log('fire left', { shots: leftShot.shots })
+if (!leftShot.shots.some((shot) => shot.vx < 0)) {
+  errors.push('left-facing shot did not travel left')
+}
+
+// Alt is the Keen-style gadget key. Verify the browser captures it while held.
+await page.keyboard.down('Alt')
+await page.waitForTimeout(80)
+const altHeld = await page.evaluate(() => window.__GG_DEBUG__.scene.inputManager.isDown('gadget'))
+await page.keyboard.up('Alt')
+if (!altHeld) errors.push('Alt did not activate the gadget action')
+
+await page.waitForTimeout(600)
+const cleaned = await projectileState()
+console.log('muzzle cleanup', { flashes: cleaned.flashes })
+if (cleaned.flashes !== 0) errors.push('muzzle flash did not clean up')
+await page.evaluate(() => window.__GG_DEBUG__.scene.physics.resume())
+const fired = await snapshot()
+if ((fired.shots ?? 0) < beforeShots + 2) errors.push('fire action did not fire twice')
+if ((fired.jumps ?? 0) !== (started.jumps ?? 0)) errors.push('Space fired but also jumped')
+
+// Test the jump from the clean spawn, before horizontal movement can leave a ledge.
+const beforeJump = fired.jumps ?? 0
+await page.keyboard.press('Control')
+await page.waitForTimeout(300)
+const jumped = await snapshot()
+console.log('jump', { before: beforeJump, after: jumped.jumps, y: jumped.y, health: jumped.health })
+if ((jumped.jumps ?? 0) <= beforeJump) errors.push('Ctrl jump action did not fire')
+
 const beforeMove = await snapshot()
-await page.keyboard.down('KeyD')
+await page.keyboard.down('ArrowRight')
 await page.waitForTimeout(500)
-await page.keyboard.up('KeyD')
+await page.keyboard.up('ArrowRight')
 const moved = await snapshot()
 console.log('movement', { startX: beforeMove.x, movedX: moved.x, delta: Math.round(moved.x - beforeMove.x) })
 if (moved.x - beforeMove.x < 60) errors.push('player did not move right')
-
-const beforeShots = moved.shots ?? 0
-await page.keyboard.down('KeyJ')
-await page.waitForTimeout(120)
-await page.keyboard.up('KeyJ')
-await page.waitForTimeout(220)
-const fired = await snapshot()
-console.log('fire', { before: beforeShots, after: fired.shots, projectiles: fired.projectiles })
-if ((fired.shots ?? 0) <= beforeShots) errors.push('fire action did not fire')
 await page.screenshot({ path: `${out}/run.png` })
 
-await page.keyboard.press('Escape')
-await page.waitForTimeout(350)
+await page.bringToFront()
+await page.mouse.click(1250, 31)
+await page.waitForTimeout(400)
 const paused = await snapshot()
 console.log('pause', { paused: paused.paused })
 await page.screenshot({ path: `${out}/pause.png` })
-if (!paused.paused) errors.push('pause menu did not open')
+if (!paused.paused) errors.push('pause button did not open the pause menu')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(500)
 const resumed = await snapshot()
@@ -137,6 +188,8 @@ console.log('result', result)
 if ((result.elapsedMs ?? 0) <= 0) errors.push('level clock never advanced')
 
 // Mobile landscape: tap START, verify the touch layout, then rotate to portrait.
+// Close the desktop tab first so the mobile page owns the browser input focus.
+await page.close()
 const mobile = await browser.newContext({
   viewport: { width: 844, height: 390 },
   isMobile: true,
@@ -145,18 +198,21 @@ const mobile = await browser.newContext({
 })
 const touchPage = await mobile.newPage()
 touchPage.on('pageerror', (error) => errors.push(`mobile pageerror: ${error.message}`))
-await touchPage.goto(url, { waitUntil: 'networkidle' })
+await touchPage.bringToFront()
+await touchPage.goto(url, { waitUntil: 'domcontentloaded' })
 await touchPage.waitForFunction(
   () => window.__GALACTIC_GADGETEER__?.scene.getScenes(true).some((scene) => scene.scene.key === 'Menu'),
   null,
   { timeout: 30000 },
 )
 await touchPage.waitForTimeout(600)
-const box = await touchPage.locator('canvas').boundingBox()
-if (!box) throw new Error('canvas missing on mobile')
-await touchPage.touchscreen.tap(box.x + (965 / 1280) * box.width, box.y + (352 / 720) * box.height)
+// Start with the focused menu action; this fixture is about the in-game touch
+// controls, while desktop coverage already exercises pointer selection.
+await touchPage.keyboard.press('Enter')
 await touchPage.waitForFunction(() => Boolean(window.__GG_DEBUG__?.player), null, { timeout: 60000 })
 await touchPage.waitForTimeout(900)
+const box = await touchPage.locator('canvas').boundingBox()
+if (!box) throw new Error('canvas missing on mobile')
 const touchState = await touchPage.evaluate(() => ({
   game: Boolean(window.__GG_DEBUG__?.player),
   touchVisible: Boolean(window.__GG_DEBUG__?.scene?.touch?.isVisible),
@@ -166,6 +222,22 @@ const touchState = await touchPage.evaluate(() => ({
 await touchPage.screenshot({ path: `${out}/touch.png` })
 console.log('touch', touchState)
 if (!touchState.touchVisible) errors.push('touch controls were not visible on a touch device')
+
+// The right-hand action buttons must work with a real touch, not only render.
+const touchShotsBefore = await touchPage.evaluate(() => window.__GG_DEBUG__.shotsFired)
+await touchPage.touchscreen.tap(box.x + (1006 / 1280) * box.width, box.y + (542 / 720) * box.height)
+await touchPage.waitForTimeout(350)
+const touchShotsAfter = await touchPage.evaluate(() => window.__GG_DEBUG__.shotsFired)
+console.log('touch fire', { before: touchShotsBefore, after: touchShotsAfter })
+if ((touchShotsAfter ?? 0) <= (touchShotsBefore ?? 0)) errors.push('touch FIRE button did not fire')
+
+// Gadget slots are selectable by touch; the GADGET button then uses the choice.
+await touchPage.evaluate(() => window.__GG_DEBUG__.scene.player.unlockGadget('jetpack'))
+await touchPage.touchscreen.tap(box.x + (94 / 1280) * box.width, box.y + (158 / 720) * box.height)
+await touchPage.waitForTimeout(150)
+const selectedGadget = await touchPage.evaluate(() => window.__GG_DEBUG__.player.activeGadget)
+console.log('touch gadget select', selectedGadget)
+if (selectedGadget !== 'jetpack') errors.push(`touch gadget slot selected ${selectedGadget}`)
 
 await touchPage.setViewportSize({ width: 390, height: 844 })
 await touchPage.waitForTimeout(800)

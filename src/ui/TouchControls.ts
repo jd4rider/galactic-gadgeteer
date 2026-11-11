@@ -45,10 +45,14 @@ export class TouchControls {
     this.container.add([this.base, this.knob])
     this.buildButtons()
     this.layout()
-    scene.input.on('pointerdown', this.onPointerDown)
-    scene.input.on('pointermove', this.onPointerMove)
-    scene.input.on('pointerup', this.onPointerUp)
-    scene.input.on('pointerupoutside', this.onPointerUp)
+    // Use DOM pointer events for the virtual pad. They use the canvas rect
+    // directly, avoiding the horizontal offset Phaser can apply to touch input
+    // when an auto-centred canvas sits inside an iframe.
+    const canvas = scene.game.canvas
+    canvas.addEventListener('pointerdown', this.onPointerDown)
+    canvas.addEventListener('pointermove', this.onPointerMove)
+    window.addEventListener('pointerup', this.onPointerUp)
+    window.addEventListener('pointercancel', this.onPointerUp)
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this)
   }
 
@@ -82,7 +86,7 @@ export class TouchControls {
           color: CSS.white,
         })
         .setOrigin(0.5)
-      const hit = this.scene.add.circle(0, 0, 46, 0xffffff, 0.001).setInteractive({ useHandCursor: false })
+      const hit = this.scene.add.circle(0, 0, 46, 0xffffff, 0.001)
       this.container.add([graphics, glyphText, text, hit])
       const button: TouchButton = {
         ...definition,
@@ -95,25 +99,6 @@ export class TouchControls {
         glyphText,
         hit,
       }
-      hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-        if (!this.visible) return
-        button.pointerId = pointer.id
-        this.input.setTouchButton(button.action, true)
-        this.paintButton(button, true)
-        this.lastTouchAt = this.scene.time.now
-      })
-      hit.on('pointerup', () => {
-        if (button.pointerId === null) return
-        button.pointerId = null
-        this.input.setTouchButton(button.action, false)
-        this.paintButton(button, false)
-      })
-      hit.on('pointerout', () => {
-        if (button.pointerId === null) return
-        button.pointerId = null
-        this.input.setTouchButton(button.action, false)
-        this.paintButton(button, false)
-      })
       this.buttons.push(button)
     })
   }
@@ -189,11 +174,34 @@ export class TouchControls {
     knob.fillCircle(x + dx - 7, y + dy - 8, 6 * scale)
   }
 
-  private onPointerDown = (pointer: Phaser.Input.Pointer): void => {
+  private buttonAt(x: number, y: number): TouchButton | null {
+    for (const button of this.buttons) {
+      if (Phaser.Math.Distance.Between(x, y, button.x, button.y) <= button.radius + 10) return button
+    }
+    return null
+  }
+
+  private pointerAt(event: PointerEvent): { x: number; y: number } {
+    const rect = this.scene.game.canvas.getBoundingClientRect()
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * GAME_WIDTH,
+      y: ((event.clientY - rect.top) / rect.height) * GAME_HEIGHT,
+    }
+  }
+
+  private onPointerDown = (event: PointerEvent): void => {
     if (!this.visible || !this.enabled) return
     this.lastTouchAt = this.scene.time.now
+    const pointer = this.pointerAt(event)
+    const button = this.buttonAt(pointer.x, pointer.y)
+    if (button) {
+      button.pointerId = event.pointerId
+      this.input.setTouchButton(button.action, true)
+      this.paintButton(button, true)
+      return
+    }
     if (pointer.x < GAME_WIDTH * 0.46 && pointer.y > GAME_HEIGHT * 0.45 && this.joyPointer === null) {
-      this.joyPointer = pointer.id
+      this.joyPointer = event.pointerId
       this.joyBaseX = pointer.x
       this.joyBaseY = pointer.y
       this.paintJoystick(0, 0)
@@ -201,16 +209,17 @@ export class TouchControls {
     }
   }
 
-  private onPointerMove = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.visible || this.joyPointer !== pointer.id) return
+  private onPointerMove = (event: PointerEvent): void => {
+    if (!this.visible || this.joyPointer !== event.pointerId) return
+    const pointer = this.pointerAt(event)
     const dx = Phaser.Math.Clamp(pointer.x - this.joyBaseX, -this.joyRadius, this.joyRadius)
     const dy = Phaser.Math.Clamp(pointer.y - this.joyBaseY, -this.joyRadius, this.joyRadius)
     this.paintJoystick(dx, dy)
     this.input.setTouchAxis(dx / this.joyRadius, dy / this.joyRadius)
   }
 
-  private onPointerUp = (pointer: Phaser.Input.Pointer): void => {
-    if (this.joyPointer === pointer.id) {
+  private onPointerUp = (event: PointerEvent): void => {
+    if (this.joyPointer === event.pointerId) {
       this.joyPointer = null
       this.joyBaseX = this.settings.leftHanded ? GAME_WIDTH - 152 : 152
       this.joyBaseY = 556
@@ -218,7 +227,7 @@ export class TouchControls {
       this.input.setTouchAxis(0, 0)
     }
     for (const button of this.buttons) {
-      if (button.pointerId === pointer.id) {
+      if (button.pointerId === event.pointerId) {
         button.pointerId = null
         this.input.setTouchButton(button.action, false)
         this.paintButton(button, false)
@@ -254,10 +263,11 @@ export class TouchControls {
   }
 
   destroy(): void {
-    this.scene.input.off('pointerdown', this.onPointerDown)
-    this.scene.input.off('pointermove', this.onPointerMove)
-    this.scene.input.off('pointerup', this.onPointerUp)
-    this.scene.input.off('pointerupoutside', this.onPointerUp)
+    const canvas = this.scene.game.canvas
+    canvas.removeEventListener('pointerdown', this.onPointerDown)
+    canvas.removeEventListener('pointermove', this.onPointerMove)
+    window.removeEventListener('pointerup', this.onPointerUp)
+    window.removeEventListener('pointercancel', this.onPointerUp)
     this.container.destroy(true)
   }
 }

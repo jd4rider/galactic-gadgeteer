@@ -111,6 +111,25 @@ const number = (value: unknown, min: number, max: number, fallbackValue: number)
 const boolean = (value: unknown, fallbackValue: boolean): boolean =>
   typeof value === 'boolean' ? value : fallbackValue
 
+const sameCodes = (a: string[], b: string[]): boolean =>
+  a.length === b.length && a.every((code, index) => code === b[index])
+
+/** Upgrade saves created with the pre-Keen default keyboard layout. */
+function upgradeLegacyBindings(bindings: Bindings): Bindings {
+  const next = structuredClone(bindings)
+  const legacy =
+    sameCodes(next.jump, ['Space', 'KeyW', 'ArrowUp']) &&
+    sameCodes(next.fire, ['KeyJ']) &&
+    sameCodes(next.gadget, ['KeyK']) &&
+    sameCodes(next.interact, ['KeyE', 'Enter'])
+  if (!legacy) return next
+  next.jump = [...DEFAULT_BINDINGS.jump]
+  next.fire = [...DEFAULT_BINDINGS.fire]
+  next.gadget = [...DEFAULT_BINDINGS.gadget]
+  next.interact = [...DEFAULT_BINDINGS.interact]
+  return next
+}
+
 export function sanitizeSave(raw: unknown): SaveData {
   const clean = defaultSave()
   if (!raw || typeof raw !== 'object') return clean
@@ -142,6 +161,7 @@ export function sanitizeSave(raw: unknown): SaveData {
         if (codes.length > 0) clean.settings.bindings[action] = codes
       }
     }
+    clean.settings.bindings = upgradeLegacyBindings(clean.settings.bindings)
   }
 
   if (data.levels && typeof data.levels === 'object') {

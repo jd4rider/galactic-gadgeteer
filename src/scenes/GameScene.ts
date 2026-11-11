@@ -105,6 +105,7 @@ export class GameScene extends Phaser.Scene {
   private onBlur!: () => void
   private onVisibility!: () => void
   private onOrientationEvent!: (event: Event) => void
+  private onPausePointer!: (pointer: Phaser.Input.Pointer) => void
 
   constructor() {
     super('Game')
@@ -535,15 +536,18 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player.sprite, this.gateBody)
     this.physics.add.collider(this.player.sprite, this.wallBody)
     this.physics.add.collider(this.crate, this.solids)
-    this.physics.add.collider(this.projectiles, this.solids, (shot) =>
-      this.hitSolid(shot as Phaser.Physics.Arcade.Image),
-    )
-    this.physics.add.collider(this.projectiles, this.wallBody, (shot) =>
-      this.hitWall(shot as Phaser.Physics.Arcade.Image),
-    )
-    this.physics.add.collider(this.enemyShots, this.solids, (shot) =>
-      this.hitSolid(shot as Phaser.Physics.Arcade.Image),
-    )
+    this.physics.add.collider(this.projectiles, this.solids, (a, b) => {
+      const shot = this.shotFrom(this.projectiles, a, b)
+      if (shot) this.hitSolid(shot)
+    })
+    this.physics.add.collider(this.projectiles, this.wallBody, (a, b) => {
+      const shot = this.shotFrom(this.projectiles, a, b)
+      if (shot) this.hitWall(shot)
+    })
+    this.physics.add.collider(this.enemyShots, this.solids, (a, b) => {
+      const shot = this.shotFrom(this.enemyShots, a, b)
+      if (shot) this.hitSolid(shot)
+    })
     this.physics.add.overlap(this.player.sprite, this.enemyShots, (_player, shot) => {
       const image = shot as Phaser.Physics.Arcade.Image
       this.player.damage(1, image.x)
@@ -653,9 +657,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildHud(): void {
-    this.hud = new Hud(this, this.level.shards.length, () => {
-      if (!this.complete) this.openPause('manual')
-    })
+    this.hud = new Hud(
+      this,
+      this.level.shards.length,
+      () => {
+        if (!this.complete) this.openPause('manual')
+      },
+      (index) => {
+        if (this.paused || this.complete) return
+        this.player.selectGadget(index)
+        audio.sfx('click')
+      },
+    )
     this.touch = new TouchControls(this, this.inputManager, this.save.settings)
     const touchEnabled = this.save.settings.touchControls && this.inputManager.touchDevice
     this.touch.setEnabled(touchEnabled)
@@ -747,6 +760,14 @@ export class GameScene extends Phaser.Scene {
         this.closePause()
       }
     }
+    // HUD children live inside a container, whose nested hit area can miss
+    // pointers under an iframe. The pause icon is important enough to have a
+    // scene-level fallback too.
+    this.onPausePointer = (pointer: Phaser.Input.Pointer) => {
+      if (this.paused || this.complete) return
+      if (pointer.x >= GAME_WIDTH - 62 && pointer.y <= 62) this.openPause('manual')
+    }
+    this.input.on('pointerdown', this.onPausePointer)
     window.addEventListener('blur', this.onBlur)
     window.addEventListener('visibilitychange', this.onVisibility)
     window.addEventListener('gg-orientation', this.onOrientationEvent)
@@ -776,11 +797,11 @@ export class GameScene extends Phaser.Scene {
 
   private showGadgetHint(gadget: Gadget): void {
     const hints: Record<Gadget, string> = {
-      blaster: 'PLASMA BLASTER ONLINE — J or left mouse fires.',
-      jetpack: 'JETPACK ONLINE — press 2, then hold K in the air to fly. It burns fuel.',
-      spring: 'SPRING BOOTS ONLINE — press 3, hold K on the ground, release to launch.',
-      magnet: 'MAGNET GLOVE ONLINE — press 4, hold K near the metal crate to pull it.',
-      phase: 'PHASE DASH ONLINE — press 5, then Shift to dash through pink barriers.',
+      blaster: 'PLASMA BLASTER ONLINE — Space or left mouse fires.',
+      jetpack: 'JETPACK ONLINE — tap its slot or press 2, then hold Alt in the air to fly. It burns fuel.',
+      spring: 'SPRING BOOTS ONLINE — tap its slot or press 3, hold Alt on the ground, release to launch.',
+      magnet: 'MAGNET GLOVE ONLINE — tap its slot or press 4, hold Alt near the metal crate to pull it.',
+      phase: 'PHASE DASH ONLINE — tap its slot or press 5, then Shift or Alt to dash through pink barriers.',
     }
     this.hud.showToast(hints[gadget], 5200)
     if (gadget !== 'blaster') {
@@ -790,32 +811,45 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnPlayerShot(ax: number, ay: number, x: number, y: number): void {
-    const shot = this.physics.add.image(x, y, 'bolt-shot').setDepth(29)
+    // Create through the group first. Adding an existing Arcade image to a
+    // physics group applies the group defaults and can reset its velocity to
+    // zero, leaving the bolt stuck at the muzzle.
+    const shot = this.projectiles.create(x, y, 'bolt-shot') as Phaser.Physics.Arcade.Image
+    shot.setDepth(29)
     shot.setRotation(Math.atan2(ay, ax))
     const body = shot.body as Phaser.Physics.Arcade.Body
     body.setAllowGravity(false)
     body.setSize(28, 12)
     body.setVelocity(ax * 860, ay * 860)
-    shot.setData('expires', this.time.now + 900)
-    this.projectiles.add(shot)
+    shot.setData('ttl', 900)
     this.sparks.emitParticleAt(x, y, 3)
-    this.add
+    const flash = this.add
       .image(x, y, 'muzzle')
       .setScale(0.7)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(30)
       .setTint(0x7ef5e5)
       .setAlpha(0.9)
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 1.15,
+      duration: 120,
+      ease: 'Quad.out',
+      onComplete: () => flash.destroy(),
+    })
   }
 
   private spawnEnemyShot(x: number, y: number, vx: number, vy: number): void {
-    const shot = this.physics.add.image(x, y, 'enemy-shot').setDepth(28)
+    // Same group-default ordering as the player bolt: create inside the group,
+    // then apply the velocity so turret fire actually leaves the barrel.
+    const shot = this.enemyShots.create(x, y, 'enemy-shot') as Phaser.Physics.Arcade.Image
+    shot.setDepth(28)
     const body = shot.body as Phaser.Physics.Arcade.Body
     body.setAllowGravity(false)
     body.setSize(14, 14)
     body.setVelocity(vx, vy)
-    shot.setData('expires', this.time.now + 2600)
-    this.enemyShots.add(shot)
+    shot.setData('ttl', 2600)
     this.sparks.emitParticleAt(x, y, 3)
     audio.sfx('shoot')
   }
@@ -1015,7 +1049,19 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private updateProjectiles(): void {
+  private shotFrom(
+    group: Phaser.Physics.Arcade.Group,
+    a: unknown,
+    b: unknown,
+  ): Phaser.Physics.Arcade.Image | null {
+    const first = a as Phaser.GameObjects.GameObject
+    const second = b as Phaser.GameObjects.GameObject
+    if (group.contains(first)) return first as Phaser.Physics.Arcade.Image
+    if (group.contains(second)) return second as Phaser.Physics.Arcade.Image
+    return null
+  }
+
+  private updateProjectiles(delta: number): void {
     this.checkProjectileEnemyHits()
     for (const child of this.projectiles.getChildren()) {
       const image = child as Phaser.Physics.Arcade.Image
@@ -1024,14 +1070,21 @@ export class GameScene extends Phaser.Scene {
         image.destroy()
         continue
       }
-      const expires = Number(image.getData('expires') ?? 0)
-      if (expires > 0 && this.time.now > expires) image.destroy()
+      this.tickShot(image, delta)
     }
     for (const child of this.enemyShots.getChildren()) {
       const image = child as Phaser.Physics.Arcade.Image
       if (!image.active) continue
-      if (this.time.now > Number(image.getData('expires') ?? 0)) image.destroy()
+      this.tickShot(image, delta)
     }
+  }
+
+  private tickShot(image: Phaser.Physics.Arcade.Image, delta: number): void {
+    const ttl = Number(image.getData('ttl') ?? 0)
+    if (ttl <= 0) return
+    const remaining = ttl - Math.min(delta, 50)
+    if (remaining <= 0) image.destroy()
+    else image.setData('ttl', remaining)
   }
 
   private checkProjectileEnemyHits(): void {
@@ -1301,7 +1354,7 @@ export class GameScene extends Phaser.Scene {
     this.updateHints()
     this.updateMagnet(Math.min(delta, 50) / 1000)
     this.updateEnemies(delta)
-    this.updateProjectiles()
+    this.updateProjectiles(delta)
     this.updateCharge()
     this.updateCamera()
     this.updateCrateGlow()
@@ -1379,6 +1432,7 @@ export class GameScene extends Phaser.Scene {
     window.removeEventListener('blur', this.onBlur)
     window.removeEventListener('visibilitychange', this.onVisibility)
     window.removeEventListener('gg-orientation', this.onOrientationEvent)
+    this.input.off('pointerdown', this.onPausePointer)
     this.inputManager.destroy()
     this.touch?.destroy()
     this.hud.destroy()

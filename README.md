@@ -22,17 +22,19 @@ The Pages workflow deploys the build at `/`, with a duplicate playable copy at `
 
 ## Controls
 
+Classic Commander Keen layout: arrows move, **Ctrl jumps**, **Alt uses the gadget action**, and **Space fires**. WASD, J and K remain as alternates.
+
 | Action | Keyboard / mouse | Controller | Touch |
 |---|---|---|---|
-| Move | A / D or arrows | Left stick or D-pad | Left thumb pad |
-| Jump / fly | Space | A / Cross | Jump |
-| Fire | J or left mouse | X / Square or right trigger | Fire |
-| Use gadget | K or right mouse | Y / Triangle | Gadget |
+| Move | Arrow keys or A / D | Left stick or D-pad | Left thumb pad |
+| Jump / fly | Ctrl or W | A / Cross | Jump |
+| Fire | Space, J or left mouse | X / Square or right trigger | Fire |
+| Use gadget | Alt, K or right mouse | Y / Triangle | Gadget |
 | Dash | Shift or L | B / Circle | Dash |
 | Select gadget | 1–5 or Q | LB / RB cycle | Gadget button + labels |
 | Pause | Escape or P | Start / Options | Pause icon |
 
-All four input paths feed one logical action layer in `src/input/InputManager.ts`. Gameplay never reads a raw key or gamepad button. Mouse aiming is camera-correct; keyboard and controller aiming fall back to an eight-direction facing model.
+All four input paths feed one logical action layer in `src/input/InputManager.ts`. Gameplay never reads a raw key or gamepad button. Mouse aiming is camera-correct; keyboard and controller aiming fall back to an eight-direction facing model. Existing saves created with the old Space-to-jump defaults are upgraded automatically; custom remaps are preserved.
 
 Touch controls support real simultaneous presses: move, hold jump, fire and use a gadget at once. They hide automatically when an actual controller input is received and can be restored from Settings.
 

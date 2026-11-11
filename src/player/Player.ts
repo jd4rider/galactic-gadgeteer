@@ -271,7 +271,14 @@ export class Player {
 
     this.crouching = grounded && input.isDown('down') && !this.dashing
 
-    if (!this.springCharging && input.isDown('fire') && now >= this.nextShotAt && !this.dashing) {
+    // A quick mobile tap can begin and end between two update frames, so a
+    // justPressed pulse counts as well as a held fire button.
+    if (
+      !this.springCharging &&
+      (input.isDown('fire') || input.justPressed('fire')) &&
+      now >= this.nextShotAt &&
+      !this.dashing
+    ) {
       this.nextShotAt = now + TUNING.fireCooldownMs
       const muzzleX = this.x + aim.x * 25
       const muzzleY = this.y - 7 + aim.y * 20

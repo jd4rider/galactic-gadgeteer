@@ -35,6 +35,16 @@
         display: block;
         touch-action: none;
       }
+      /* Phones are wider than 16:9; fill the landscape viewport instead of
+         leaving large side bars. The virtual controls use the canvas rect, so
+         input stays aligned with the stretched presentation. */
+      @media (pointer: coarse) and (orientation: landscape) {
+        #game canvas {
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+        }
+      }
       .sr-only {
         position: absolute;
         width: 1px;

@@ -119,6 +119,10 @@ export class InputManager {
       'KeyM',
       'ShiftLeft',
       'ShiftRight',
+      'ControlLeft',
+      'ControlRight',
+      'AltLeft',
+      'AltRight',
     ]
     keyboard?.addCapture(capture)
 
@@ -146,7 +150,13 @@ export class InputManager {
     if (event.repeat) return
     const mapped = this.actionsForCode(event.code)
     if (mapped.length === 0) return
-    if (event.code === 'Tab' || event.code === 'Space' || event.code.startsWith('Arrow')) {
+    if (
+      event.code === 'Tab' ||
+      event.code === 'Space' ||
+      event.code.startsWith('Arrow') ||
+      event.code.startsWith('Control') ||
+      event.code.startsWith('Alt')
+    ) {
       event.preventDefault()
     }
     const wasDown = new Set<Action>()
@@ -396,7 +406,10 @@ export class InputManager {
       const length = Math.hypot(this.gamepadAimX, this.gamepadAimY) || 1
       return { x: this.gamepadAimX / length, y: this.gamepadAimY / length }
     }
-    if ((this.currentDevice === 'mouse' || this.currentDevice === 'keyboard') && this.pointerMoved) {
+    // Keyboard fire follows Pip's facing. Mouse aiming is only active after
+    // the player has actually used the mouse, so a menu click cannot leave a
+    // stale cursor direction controlling keyboard fire for the whole level.
+    if (this.currentDevice === 'mouse' && this.pointerMoved) {
       const camera = this.scene.cameras.main
       const world = camera.getWorldPoint(this.pointerX, this.pointerY)
       const dx = world.x - playerX
