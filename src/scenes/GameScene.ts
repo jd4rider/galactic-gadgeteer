@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { openTipJar } from './support'
 import { CSS, DISPLAY_FONT, FONT, GAME_HEIGHT, GAME_WIDTH } from '../config'
 import { audio } from '../audio/AudioEngine'
 import { loadSave, recordLevel, unlockAchievement, formatTime, type SaveData } from '../core/save'
@@ -1347,6 +1348,21 @@ export class GameScene extends Phaser.Scene {
     })
     this.resultsList.setDepth(1500)
     this.resultsList.setVisible(true)
+    // Quiet support link: results panel only, below the card, never mid-run.
+    const tip = this.add
+      .text(640, 640, '☕  BUY ME A COFFEE', {
+        fontFamily: FONT,
+        fontSize: '11px',
+        fontStyle: 'bold',
+        color: CSS.muted,
+        letterSpacing: 2,
+      })
+      .setOrigin(0.5)
+      .setPadding(14, 9)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1500)
+    tip.on('pointerdown', () => openTipJar())
+    this.resultsContainer.add(tip)
     this.resultsContainer.setAlpha(0)
     this.tweens.add({ targets: this.resultsContainer, alpha: 1, duration: 350 })
     this.grant('beacon-lit')
