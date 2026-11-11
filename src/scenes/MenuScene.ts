@@ -465,10 +465,10 @@ export class MenuScene extends Phaser.Scene {
 
   private helpCopy(): string {
     return [
-      'MOVE  ·  Arrow keys or A / D. On a phone, the left thumb pad drives Pip.',
-      'JUMP  ·  CTRL, or W. Hold it for height, or press it just after leaving a ledge.',
-      'BLASTER  ·  SPACE, J or left mouse. Aim with the mouse, the right stick, or your facing.',
-      'GADGETS  ·  ALT selects/uses the pogo-style gadget action; 1–5 + K also work. Jetpack 2: hold ALT in the air. Spring 3: hold ALT on the ground and release. Magnet 4: hold ALT near the crate. Phase 5: Shift dashes through pink barriers.',
+      'MOVE  ·  A / D or the arrow keys. On a phone, the left thumb pad drives Pip.',
+      'JUMP  ·  SPACE. Hold it for height, or press it just after leaving a ledge.',
+      'BLASTER  ·  J or left mouse. Aim with the mouse, the right stick, or your facing.',
+      'GADGETS  ·  1–5 select, K uses. Jetpack 2: hold K in the air. Spring 3: hold K on the ground and release. Magnet 4: hold K near the crate. Phase 5: Shift dashes through pink barriers.',
       'EXPLORE  ·  Star Shards reward curiosity. Data capsules hide behind breakable walls. Checkpoints save your fall.',
       'PAUSE  ·  ESC or START. The whole pause menu works with a controller.',
     ].join('\n\n')

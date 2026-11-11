@@ -18,18 +18,18 @@ export type Action = (typeof ACTIONS)[number]
 
 export type Bindings = Record<Action, string[]>
 
-// Classic Commander Keen layout: arrows move, Ctrl jumps, Alt uses the
-// pogo-style gadget action, and Space fires. WASD/J/K remain as alternates.
+// Standard keyboard layout: arrows or A/D move, Space jumps, J fires and K
+// uses the selected gadget.
 export const DEFAULT_BINDINGS: Bindings = {
   left: ['KeyA', 'ArrowLeft'],
   right: ['KeyD', 'ArrowRight'],
   up: ['KeyW', 'ArrowUp'],
   down: ['KeyS', 'ArrowDown'],
-  jump: ['ControlLeft', 'ControlRight', 'KeyW'],
-  fire: ['Space', 'KeyJ'],
-  gadget: ['AltLeft', 'AltRight', 'KeyK'],
+  jump: ['Space', 'KeyW', 'ArrowUp'],
+  fire: ['KeyJ'],
+  gadget: ['KeyK'],
   dash: ['ShiftLeft', 'KeyL'],
-  interact: ['KeyE', 'Enter', 'Space'],
+  interact: ['KeyE', 'Enter'],
   next: ['KeyQ'],
   prev: ['KeyQ'],
   pause: ['Escape', 'KeyP'],

@@ -248,8 +248,8 @@ export class Hud {
     }
     this.controls.setText(
       player.unlocked.has('phase')
-        ? 'ARROWS / A-D MOVE  ·  CTRL JUMP  ·  SPACE FIRE  ·  ALT GADGET  ·  SHIFT DASH  ·  ESC PAUSE'
-        : 'ARROWS / A-D MOVE  ·  CTRL JUMP  ·  SPACE FIRE  ·  ALT GADGET  ·  ESC PAUSE',
+        ? 'ARROWS / A-D MOVE  ·  SPACE JUMP  ·  J FIRE  ·  K GADGET  ·  SHIFT DASH  ·  ESC PAUSE'
+        : 'ARROWS / A-D MOVE  ·  SPACE JUMP  ·  J FIRE  ·  K GADGET  ·  ESC PAUSE',
     )
   }
 

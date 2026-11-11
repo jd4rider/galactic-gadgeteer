@@ -78,9 +78,9 @@ const projectileState = () =>
     }
   })
 
-// Fire before moving. Physics is paused for this observation so the slow
-// headless clock cannot advance a bolt all the way to the distant wall in one
-// frame; the velocity assertion still exercises the real spawn path.
+// Fire before moving with J. Physics is paused for this observation so the
+// slow headless clock cannot advance a bolt all the way to the distant wall in
+// one frame; the velocity assertion still exercises the real spawn path.
 const beforeShots = started.shots ?? 0
 await page.evaluate(() => {
   const scene = window.__GG_DEBUG__.scene
@@ -88,9 +88,9 @@ await page.evaluate(() => {
   scene.player.nextShotAt = 0
   scene.player.facing = 1
 })
-await page.keyboard.down('Space')
+await page.keyboard.down('KeyJ')
 await page.waitForTimeout(90)
-await page.keyboard.up('Space')
+await page.keyboard.up('KeyJ')
 await page.waitForTimeout(100)
 const rightShot = await projectileState()
 console.log('fire right', { before: beforeShots, shots: rightShot.shots })
@@ -105,9 +105,9 @@ await page.evaluate(() => {
   scene.player.nextShotAt = 0
   scene.player.facing = -1
 })
-await page.keyboard.down('Space')
+await page.keyboard.down('KeyJ')
 await page.waitForTimeout(120)
-await page.keyboard.up('Space')
+await page.keyboard.up('KeyJ')
 await page.waitForTimeout(100)
 const leftShot = await projectileState()
 console.log('fire left', { shots: leftShot.shots })
@@ -115,12 +115,12 @@ if (!leftShot.shots.some((shot) => shot.vx < 0)) {
   errors.push('left-facing shot did not travel left')
 }
 
-// Alt is the Keen-style gadget key. Verify the browser captures it while held.
-await page.keyboard.down('Alt')
+// K is the gadget key. Verify it drives the gadget action while held.
+await page.keyboard.down('KeyK')
 await page.waitForTimeout(80)
-const altHeld = await page.evaluate(() => window.__GG_DEBUG__.scene.inputManager.isDown('gadget'))
-await page.keyboard.up('Alt')
-if (!altHeld) errors.push('Alt did not activate the gadget action')
+const gadgetHeld = await page.evaluate(() => window.__GG_DEBUG__.scene.inputManager.isDown('gadget'))
+await page.keyboard.up('KeyK')
+if (!gadgetHeld) errors.push('K did not activate the gadget action')
 
 await page.waitForTimeout(600)
 const cleaned = await projectileState()
@@ -129,15 +129,15 @@ if (cleaned.flashes !== 0) errors.push('muzzle flash did not clean up')
 await page.evaluate(() => window.__GG_DEBUG__.scene.physics.resume())
 const fired = await snapshot()
 if ((fired.shots ?? 0) < beforeShots + 2) errors.push('fire action did not fire twice')
-if ((fired.jumps ?? 0) !== (started.jumps ?? 0)) errors.push('Space fired but also jumped')
+if ((fired.jumps ?? 0) !== (started.jumps ?? 0)) errors.push('J fired but also jumped')
 
 // Test the jump from the clean spawn, before horizontal movement can leave a ledge.
 const beforeJump = fired.jumps ?? 0
-await page.keyboard.press('Control')
+await page.keyboard.press('Space')
 await page.waitForTimeout(300)
 const jumped = await snapshot()
 console.log('jump', { before: beforeJump, after: jumped.jumps, y: jumped.y, health: jumped.health })
-if ((jumped.jumps ?? 0) <= beforeJump) errors.push('Ctrl jump action did not fire')
+if ((jumped.jumps ?? 0) <= beforeJump) errors.push('Space jump action did not fire')
 
 const beforeMove = await snapshot()
 await page.keyboard.down('ArrowRight')

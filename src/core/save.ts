@@ -114,15 +114,15 @@ const boolean = (value: unknown, fallbackValue: boolean): boolean =>
 const sameCodes = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((code, index) => code === b[index])
 
-/** Upgrade saves created with the pre-Keen default keyboard layout. */
-function upgradeLegacyBindings(bindings: Bindings): Bindings {
+/** Restore the old defaults for saves that adopted the brief Keen layout. */
+function restorePreKeenBindings(bindings: Bindings): Bindings {
   const next = structuredClone(bindings)
-  const legacy =
-    sameCodes(next.jump, ['Space', 'KeyW', 'ArrowUp']) &&
-    sameCodes(next.fire, ['KeyJ']) &&
-    sameCodes(next.gadget, ['KeyK']) &&
-    sameCodes(next.interact, ['KeyE', 'Enter'])
-  if (!legacy) return next
+  const keenDefaults =
+    sameCodes(next.jump, ['ControlLeft', 'ControlRight', 'KeyW']) &&
+    sameCodes(next.fire, ['Space', 'KeyJ']) &&
+    sameCodes(next.gadget, ['AltLeft', 'AltRight', 'KeyK']) &&
+    sameCodes(next.interact, ['KeyE', 'Enter', 'Space'])
+  if (!keenDefaults) return next
   next.jump = [...DEFAULT_BINDINGS.jump]
   next.fire = [...DEFAULT_BINDINGS.fire]
   next.gadget = [...DEFAULT_BINDINGS.gadget]
@@ -161,7 +161,7 @@ export function sanitizeSave(raw: unknown): SaveData {
         if (codes.length > 0) clean.settings.bindings[action] = codes
       }
     }
-    clean.settings.bindings = upgradeLegacyBindings(clean.settings.bindings)
+    clean.settings.bindings = restorePreKeenBindings(clean.settings.bindings)
   }
 
   if (data.levels && typeof data.levels === 'object') {

@@ -119,10 +119,6 @@ export class InputManager {
       'KeyM',
       'ShiftLeft',
       'ShiftRight',
-      'ControlLeft',
-      'ControlRight',
-      'AltLeft',
-      'AltRight',
     ]
     keyboard?.addCapture(capture)
 
@@ -150,13 +146,7 @@ export class InputManager {
     if (event.repeat) return
     const mapped = this.actionsForCode(event.code)
     if (mapped.length === 0) return
-    if (
-      event.code === 'Tab' ||
-      event.code === 'Space' ||
-      event.code.startsWith('Arrow') ||
-      event.code.startsWith('Control') ||
-      event.code.startsWith('Alt')
-    ) {
+    if (event.code === 'Tab' || event.code === 'Space' || event.code.startsWith('Arrow')) {
       event.preventDefault()
     }
     const wasDown = new Set<Action>()
